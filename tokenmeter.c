@@ -622,8 +622,8 @@ static int apply_limits_to(State *s, const char *body)
         const char *cu = find_key(big, "current_usage");
         if (cu && *cu == '{') {
             Usage u = {0};
-            char small[1024];
-            if (copy_obj(cu, small, sizeof small) && parse_usage(small, &u)) {
+            char cubuf[1024];
+            if (copy_obj(cu, cubuf, sizeof cubuf) && parse_usage(cubuf, &u)) {
                 s->cur = u;           /* a status line roda várias vezes: não soma na sessão */
                 s->pending = 0;
                 s->streaming = 0;
@@ -1937,11 +1937,11 @@ static void icon_frame(int pulseOn, int busy)
     else if (pulseOn) glow = 0.45 * (0.5 - 0.5 * cos(g_icoPhase * 0.25));  /* "respira" */
 
     if (g_iconSrc != SRC_OFF) {
-        int big = GetSystemMetrics(SM_CXICON), small = GetSystemMetrics(SM_CXSMICON);
+        int big = GetSystemMetrics(SM_CXICON), smallSz = GetSystemMetrics(SM_CXSMICON);
         if (big < 32) big = 32;
-        if (small < 16) small = 16;
+        if (smallSz < 16) smallSz = 16;
         HICON b = make_ring_icon(big, r, col, glow, comet, 1);
-        HICON s = make_ring_icon(small, r, col, glow, comet, 0);
+        HICON s = make_ring_icon(smallSz, r, col, glow, comet, 0);
         if (b) { SendMessageW(g_hwnd, WM_SETICON, ICON_BIG, (LPARAM)b); if (g_icoBig) DestroyIcon(g_icoBig); g_icoBig = b; }
         if (s) { SendMessageW(g_hwnd, WM_SETICON, ICON_SMALL, (LPARAM)s); if (g_icoSmall) DestroyIcon(g_icoSmall); g_icoSmall = s; }
         taskbar_progress(r, busy);
