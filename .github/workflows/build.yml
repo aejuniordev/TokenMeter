@@ -1,0 +1,88 @@
+# Compila o TokenMeter.exe em todo push e pull request.
+# Ao enviar uma tag "v*" (ex.: v1.3.0), publica uma Release com os binários.
+#
+#   git tag v1.3.0
+#   git push origin v1.3.0
+name: Build e Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # necessário para criar a Release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: Compilar (MinGW-w64) e testar
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar compilador e ferramentas de teste
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 zip wine64 xvfb
+
+      - name: Definir versão
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V="0.0.0-dev.${GITHUB_SHA::7}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Versão: $V"
+
+      - name: Compilar TokenMeter.exe
+        run: ./scripts/build.sh "${{ steps.ver.outputs.version }}"
+
+      - name: Teste rápido no Wine
+        run: ./scripts/smoke-test.sh dist/TokenMeter.exe
+
+      - name: Empacotar
+        run: ./scripts/package.sh "${{ steps.ver.outputs.version }}"
+
+      - name: Guardar artefato do build
+        uses: actions/upload-artifact@v4
+        with:
+          name: TokenMeter-${{ steps.ver.outputs.version }}
+          path: dist/release/*
+          if-no-files-found: error
+
+      - name: Publicar Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: TokenMeter ${{ steps.ver.outputs.version }}
+          files: dist/release/*
+          generate_release_notes: true
+          prerelease: ${{ contains(steps.ver.outputs.version, '-') }}
+          body: |
+            ## Download
+
+            - **TokenMeter-${{ steps.ver.outputs.version }}-win64.zip**: programa, LEIA-ME e exemplos de integração.
+            - **TokenMeter.exe**: só o programa.
+            - **SHA256SUMS.txt**: somas de verificação.
+
+            Windows 10/11, 64 bits. O executável não é assinado: se o SmartScreen avisar,
+            clique em **Mais informações → Executar assim mesmo**.
+
+  msvc:
+    name: Conferir build com Visual Studio (informativo)
+    runs-on: windows-latest
+    continue-on-error: true   # não bloqueia a Release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: build.bat
+        shell: cmd
+        run: build.bat

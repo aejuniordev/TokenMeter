@@ -1,0 +1,41 @@
+#include <windows.h>
+
+/* A pipeline passa a versão da tag (scripts/build.sh). Sem isso, fica "dev". */
+#ifndef TM_VER_MAJOR
+#define TM_VER_MAJOR 0
+#endif
+#ifndef TM_VER_MINOR
+#define TM_VER_MINOR 0
+#endif
+#ifndef TM_VER_PATCH
+#define TM_VER_PATCH 0
+#endif
+#ifndef TM_VERSION_STR
+#define TM_VERSION_STR "dev"
+#endif
+
+1 ICON "tokenmeter.ico"
+1 24 "tokenmeter.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION TM_VER_MAJOR,TM_VER_MINOR,TM_VER_PATCH,0
+PRODUCTVERSION TM_VER_MAJOR,TM_VER_MINOR,TM_VER_PATCH,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "041604B0"
+    BEGIN
+      VALUE "FileDescription", "TokenMeter - uso de contexto e limites do Claude"
+      VALUE "ProductName", "TokenMeter"
+      VALUE "FileVersion", TM_VERSION_STR
+      VALUE "ProductVersion", TM_VERSION_STR
+      VALUE "OriginalFilename", "TokenMeter.exe"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0416, 1200
+  END
+END

@@ -1,0 +1,7 @@
+dist/
+*.exe
+*.res
+*.obj
+*.o
+*.pdb
+__pycache__/
